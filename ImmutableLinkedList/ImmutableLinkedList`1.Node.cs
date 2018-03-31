@@ -8,7 +8,6 @@ namespace Medallion.Collections
     {
         internal sealed class Node
         {
-            internal readonly T Value;
 #if !INVARIANT_CHECKS
             internal Node Next;
 #else
@@ -30,6 +29,8 @@ namespace Medallion.Collections
                 }
             }
 #endif
+
+            internal readonly T Value;
 
             public Node(T value)
             {

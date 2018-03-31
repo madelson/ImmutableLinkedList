@@ -230,5 +230,83 @@ namespace Medallion.Collections.Tests
             var list2 = ImmutableLinkedList.Create('y');
             list1.AppendRange(list2).Tail.ShouldEqual(list2);
         }
+
+        [Test]
+        public void TestRemove()
+        {
+            Assert.IsEmpty(ImmutableLinkedList<int>.Empty.Remove(9));
+
+            var list = Enumerable.Range(1, 10).Append(3).ToImmutableLinkedList();
+            list.Remove(100).ShouldEqual(list);
+            list.Remove(1).ShouldEqual(list.Tail);
+            list.Remove(3).SequenceEqual(Enumerable.Range(1, 10).Where(i => i != 3).Append(3))
+                .ShouldEqual(true);
+            list.Remove(3).Remove(3).SequenceEqual(list.Where(i => i != 3)).ShouldEqual(true);
+        }
+
+        [Test]
+        public void TestRemoveAt()
+        {
+            var list = new[] { "a", "b", "c" }.ToImmutableLinkedList();
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.RemoveAt(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.RemoveAt(list.Count));
+            list.RemoveAt(0).ShouldEqual(list.Tail);
+            list.RemoveAt(1).SequenceEqual(new[] { "a", "c" }).ShouldEqual(true);
+            list.RemoveAt(2).SequenceEqual(new[] { "a", "b" }).ShouldEqual(true);
+        }
+
+        [Test]
+        public void TestRemoveAll()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImmutableLinkedList<int>.Empty.RemoveAll(null));
+            Assert.IsEmpty(ImmutableLinkedList<string>.Empty.RemoveAll(_ => true));
+            var list = Enumerable.Range(0, 10).ToImmutableLinkedList();
+            list.RemoveAll(i => i == 100).ShouldEqual(list);
+            list.RemoveAll(i => i < 3).ShouldEqual(list.Tail.Tail.Tail);
+            list.RemoveAll(i => i >= 5).SequenceEqual(Enumerable.Range(1, 5));
+            list.RemoveAll(i => i % 3 != 0).SequenceEqual(new[] { 0, 3, 6, 9 });
+            Assert.IsEmpty(list.RemoveAll(_ => true));
+        }
+
+        [Test]
+        public void TestSkip()
+        {
+            // Enumerable.Skip behavior we're trying to match
+            new[] { 1 }.Skip(-1).SequenceEqual(new[] { 1 }).ShouldEqual(true);
+            new[] { 1 }.Skip(2).SequenceEqual(Array.Empty<int>()).ShouldEqual(true);
+
+            var list = ImmutableLinkedList.Create(1);
+            list.Skip(-1).ShouldEqual(list);
+            Assert.IsEmpty(list.Skip(2));
+
+            var list2 = "abcd".ToImmutableLinkedList();
+            list2.Skip(2).ShouldEqual(list2.Tail.Tail);
+        }
+
+        [Test]
+        public void TestSkipWhile()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImmutableLinkedList<char>.Empty.SkipWhile(default(Func<char, bool>)));
+            Assert.IsEmpty(ImmutableLinkedList<char>.Empty.SkipWhile(_ => true));
+
+            var list = new[] { 10, 15, 20, 25 }.ToImmutableLinkedList();
+            list.SkipWhile(_ => false).ShouldEqual(list);
+            list.SkipWhile(i => i.ToString().EndsWith("0")).ShouldEqual(list.Tail);
+            list.SkipWhile(i => i < 20).ShouldEqual(list.Tail.Tail);
+            Assert.IsEmpty(list.SkipWhile(_ => true));
+        }
+
+        [Test]
+        public void TestSkipWhileWithIndex()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImmutableLinkedList<char>.Empty.SkipWhile(default(Func<char, int, bool>)));
+            Assert.IsEmpty(ImmutableLinkedList<char>.Empty.SkipWhile((_, index) => true));
+
+            var list = new[] { 10, 15, 20, 25 }.ToImmutableLinkedList();
+            list.SkipWhile((_, index) => false).ShouldEqual(list);
+            list.SkipWhile((i, index) => index < 1).ShouldEqual(list.Tail);
+            list.SkipWhile((i, index) => i == 10 || i == 25 || index == 1).ShouldEqual(list.Tail.Tail);
+            Assert.IsEmpty(list.SkipWhile((_, index) => true));
+        }
     }
 }
