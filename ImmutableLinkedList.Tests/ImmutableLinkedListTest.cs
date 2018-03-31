@@ -381,5 +381,22 @@ namespace Medallion.Collections.Tests
             Assert.DoesNotThrow(() => ImmutableLinkedList<string>.Empty.CopyTo(new string[0], 0));
             Assert.DoesNotThrow(() => ImmutableLinkedList<string>.Empty.CopyTo(new string[10], 10));
         }
+
+        [Test]
+        public void TestDebugView()
+        {
+            var list = Enumerable.Range(1, 3).ToImmutableLinkedList();
+            var debugView = new ImmutableLinkedList<int>.DebugView(list);
+            debugView.Items.SequenceEqual(list).ShouldEqual(true);
+            debugView.Count.ShouldEqual(list.Count);
+            debugView.Head.ShouldEqual(list.Head);
+            debugView.Tail.ShouldEqual(list.Tail);
+
+            var emptyDebugView = new ImmutableLinkedList<int>.DebugView(ImmutableLinkedList<int>.Empty);
+            Assert.IsEmpty(emptyDebugView.Items);
+            emptyDebugView.Count.ShouldEqual(0);
+            emptyDebugView.Head.ShouldEqual("{list is empty}");
+            emptyDebugView.Tail.ShouldEqual("{list is empty}");
+        }
     }
 }
