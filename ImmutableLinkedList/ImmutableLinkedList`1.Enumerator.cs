@@ -52,7 +52,11 @@ namespace Medallion.Collections
             /// </summary>
             public bool MoveNext()
             {
-                if (this._next == null) { return false; }
+                if (this._next == null)
+                {
+                    this.Current = default(T);
+                    return false;
+                }
 
                 this.Current = this._next.Value;
                 this._next = this._next.Next;

@@ -9,6 +9,11 @@ namespace Medallion.Collections
     /// </summary>
     public partial struct ImmutableLinkedList<T> : IReadOnlyCollection<T>, IEquatable<ImmutableLinkedList<T>>
     {
+        /// <summary>
+        /// The empty list
+        /// </summary>
+        public static ImmutableLinkedList<T> Empty => default(ImmutableLinkedList<T>);
+
         private Node _head;
         private int _count;
 
@@ -58,6 +63,31 @@ namespace Medallion.Collections
             {
                 if (this._count == 0) { ThrowEmpty(); }
                 return new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
+            }
+        }
+
+        internal static ImmutableLinkedList<T> Create(T value) => new ImmutableLinkedList<T>(new Node(value), 1);
+
+        internal static ImmutableLinkedList<T> CreateRange(IEnumerable<T> values)
+        {
+            if (values == null) { throw new ArgumentNullException(nameof(values)); }
+
+            if (values is ImmutableLinkedList<T> list) { return list; }
+
+            using (var enumerator = values.GetEnumerator())
+            {
+                if (!enumerator.MoveNext()) { return Empty; }
+
+                var head = new Node(enumerator.Current);
+                var last = head;
+                var count = 1;
+                while (enumerator.MoveNext())
+                {
+                    last = last.Next = new Node(enumerator.Current);
+                    ++count;
+                }
+
+                return new ImmutableLinkedList<T>(head, count);
             }
         }
 
