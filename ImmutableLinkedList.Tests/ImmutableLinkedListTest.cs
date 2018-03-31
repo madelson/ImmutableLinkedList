@@ -308,5 +308,51 @@ namespace Medallion.Collections.Tests
             list.SkipWhile((i, index) => i == 10 || i == 25 || index == 1).ShouldEqual(list.Tail.Tail);
             Assert.IsEmpty(list.SkipWhile((_, index) => true));
         }
+
+        [Test]
+        public void TestSequenceEqual()
+        {
+            var comparer = new CountingEqualityComparer<int>();
+            ImmutableLinkedList<int>.Empty.SequenceEqual(ImmutableLinkedList<int>.Empty, comparer).ShouldEqual(true);
+            comparer.EqualsCount.ShouldEqual(0);
+
+            comparer = new CountingEqualityComparer<int>();
+            Enumerable.Range(1, 1000).ToImmutableLinkedList().SequenceEqual(Enumerable.Range(1, 1001).ToImmutableLinkedList(), comparer)
+                .ShouldEqual(false);
+            comparer.EqualsCount.ShouldEqual(0);
+
+            var list = Enumerable.Range(0, 500).ToImmutableLinkedList();
+            comparer = new CountingEqualityComparer<int>();
+            list.SequenceEqual(list, comparer).ShouldEqual(true);
+            comparer.EqualsCount.ShouldEqual(0);
+
+            comparer = new CountingEqualityComparer<int>();
+            list.SequenceEqual(list.ToArray().ToImmutableLinkedList(), comparer).ShouldEqual(true);
+            comparer.EqualsCount.ShouldEqual(list.Count);
+
+            comparer = new CountingEqualityComparer<int>();
+            list.PrependRange(new[] { 5, 4, 3, 2, 1 })
+                .SequenceEqual(list.PrependRange(new[] { 5, 4, 3, 2, 1 }), comparer)
+                .ShouldEqual(true);
+            comparer.EqualsCount.ShouldEqual(5);
+
+            comparer = new CountingEqualityComparer<int>();
+            list.Select(i => i == 200 ? 2000 : i).ToImmutableLinkedList()
+                .SequenceEqual(list, comparer)
+                .ShouldEqual(false);
+            comparer.EqualsCount.ShouldEqual(201);
+        }
+
+        [Test]
+        public void TestReverse()
+        {
+            Assert.IsEmpty(ImmutableLinkedList<char>.Empty.Reverse());
+            var singleton = ImmutableLinkedList.Create('a');
+            singleton.Reverse().ShouldEqual(singleton);
+
+            "abcdef".ToImmutableLinkedList().Reverse()
+                .SequenceEqual(new[] { 'f', 'e', 'd', 'c', 'b', 'a' })
+                .ShouldEqual(true);
+        }
     }
 }

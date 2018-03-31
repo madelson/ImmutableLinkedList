@@ -23,8 +23,32 @@ namespace Medallion.Collections
             return false;
         }
 
-        #region ---- Prepend ----
 		/// <summary>
+        /// Same as <see cref="Enumerable.SequenceEqual{TSource}(IEnumerable{TSource}, IEnumerable{TSource}, IEqualityComparer{TSource})"/>,
+        /// but optimized for comparing two instances of <see cref="ImmutableLinkedList{T}"/>.
+        /// 
+        /// This method is O(n).
+        /// </summary>
+        public bool SequenceEqual(ImmutableLinkedList<T> that, IEqualityComparer<T> comparer = null)
+        {
+            if (this._count != that._count) { return false; }
+
+            var comparerToUse = comparer ?? EqualityComparer<T>.Default;
+
+            var thisCurrent = this._head;
+            var thatCurrent = that._head;
+            while (true)
+            {
+                if (thisCurrent == thatCurrent) { return true; }
+                if (thisCurrent == null || !comparerToUse.Equals(thisCurrent.Value, thatCurrent.Value)) { return false; }
+
+                thisCurrent = thisCurrent.Next;
+                thatCurrent = thatCurrent.Next;
+            }
+        }
+
+        #region ---- Prepend ----
+        /// <summary>
         /// Returns a new list with <paramref name="value"/> prepended.
         /// 
         /// This method is O(1) and requires no copying.
@@ -283,5 +307,23 @@ namespace Medallion.Collections
             return new ImmutableLinkedList<T>(newHead, this._count - countRemoved);
         }
         #endregion
+
+		/// <summary>
+        /// Same as <see cref="Enumerable.Reverse{TSource}(IEnumerable{TSource})"/>, but the return type is <see cref="ImmutableLinkedList{T}"/>.
+        /// 
+        /// This method is O(n) and involves copying the entire list for lists of length two or greater.
+        /// </summary>
+        public ImmutableLinkedList<T> Reverse()
+        {
+            if (this._count < 2) { return this; }
+
+            var current = new Node(this._head.Value);
+            for (var next = this._head.Next; next != null; next = next.Next)
+            {
+                current = new Node(next.Value) { Next = current };
+            }
+
+            return new ImmutableLinkedList<T>(current, this._count);
+        }
     }
 }
