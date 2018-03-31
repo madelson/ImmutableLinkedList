@@ -354,5 +354,32 @@ namespace Medallion.Collections.Tests
                 .SequenceEqual(new[] { 'f', 'e', 'd', 'c', 'b', 'a' })
                 .ShouldEqual(true);
         }
+
+        [Test]
+        public void TestImplicitlyImplementedICollectionMethods()
+        {
+            ICollection<string> collection = new[] { "a", "b" }.ToImmutableLinkedList();
+            collection.IsReadOnly.ShouldEqual(true);
+            Assert.Throws<NotSupportedException>(() => collection.Add("c"));
+            Assert.Throws<NotSupportedException>(() => collection.Clear());
+            Assert.Throws<NotSupportedException>(() => collection.Remove("c"));
+        }
+
+        [Test]
+        public void TestCopyTo()
+        {
+            var list = new[] { 10, 12, 14 }.ToImmutableLinkedList();
+            Assert.Throws<ArgumentNullException>(() => list.CopyTo(null, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.CopyTo(new int[10], -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.CopyTo(new int[10], 11));
+            Assert.Throws<ArgumentException>(() => list.CopyTo(new int[5], 3));
+
+            var array = Enumerable.Range(0, 7).ToArray();
+            list.CopyTo(array, 3);
+            array.SequenceEqual(new[] { 0, 1, 2, 10, 12, 14, 6 }).ShouldEqual(true);
+
+            Assert.DoesNotThrow(() => ImmutableLinkedList<string>.Empty.CopyTo(new string[0], 0));
+            Assert.DoesNotThrow(() => ImmutableLinkedList<string>.Empty.CopyTo(new string[10], 10));
+        }
     }
 }
