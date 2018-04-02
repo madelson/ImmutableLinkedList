@@ -307,8 +307,35 @@ namespace Medallion.Collections
             return new ImmutableLinkedList<T>(newHead, this._count - countRemoved);
         }
         #endregion
+        
+        /// <summary>
+        /// Returns an <see cref="ImmutableLinkedList{T}"/> for the index range described
+        /// by <paramref name="startIndex"/> and <paramref name="count"/> (similar to
+        /// <see cref="String.Substring(int, int)"/>).
+        /// 
+        /// This method is O(<paramref name="startIndex"/> + <paramref name="count"/>) and
+        /// copies all elements in the returned sublist unless the sublist extends to the
+        /// end of the current list.
+        /// </summary>
+        public ImmutableLinkedList<T> SubList(int startIndex, int count)
+        {
+            if (startIndex < 0) { throw new ArgumentOutOfRangeException(nameof(startIndex), startIndex, "must be non-negative"); }
+            if (count < 0) { throw new ArgumentOutOfRangeException(nameof(count), count, "must be non-negative"); }
+            if (startIndex + count > this._count)
+            {
+                throw new ArgumentOutOfRangeException($"({nameof(startIndex)}, {nameof(count)})", $"({startIndex}, {count})", "must represent a range of indices within the list");
+            }
+            
+            if (count == 0) { return Empty; }
 
-		// todo sublist
+            var skipped = this.Skip(startIndex);
+            if (count == skipped.Count) { return skipped; }
+
+            var current = skipped._head.Next;
+            for (var i = 1; i < count; ++i) { current = current.Next; }
+            CopyNonEmptyRange(skipped._head, current, out var subListHead, out _);
+            return new ImmutableLinkedList<T>(subListHead, count);
+        }
 
 		/// <summary>
         /// Same as <see cref="Enumerable.Reverse{TSource}(IEnumerable{TSource})"/>, but the return type is <see cref="ImmutableLinkedList{T}"/>.

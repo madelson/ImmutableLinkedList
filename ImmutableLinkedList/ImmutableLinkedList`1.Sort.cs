@@ -9,10 +9,14 @@ namespace Medallion.Collections
         /// <summary>
         /// Returns a new list with the elements sorted. The sort is stable.
         /// 
-        /// This method uses the merge sort algorithm and is O(nlg(n)). Elements are only copied as
-        /// needed. For example, if a trailing portion of the original list remains unchanged in
-        /// the sorted output, those elements will not be copied. As an extension of this, calling
-        /// this method on an already-sorted list results in no copying (the original list is returned).
+        /// This method uses the merge sort algorithm and is O(nlg(n)). However, it 
+        /// can take advantage of existing sorted structure in the input to run as quickly
+        /// as O(n) in some cases (e. g. already-sorted input).
+        /// 
+        /// Elements are only copied as needed. For example, if a trailing portion of the 
+        /// original list remains unchanged in the sorted output, those elements will not 
+        /// be copied. As an extension of this, calling this method on an already-sorted list 
+        /// results in no copying (the original list is returned).
         /// </summary>
         public ImmutableLinkedList<T> Sort(IComparer<T> comparer = null)
         {

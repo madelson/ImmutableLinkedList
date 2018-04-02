@@ -344,6 +344,23 @@ namespace Medallion.Collections.Tests
         }
 
         [Test]
+        public void TestSubList()
+        {
+            var list = "abcdefghijklmnopqrstuvwxyz".ToImmutableLinkedList();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.SubList(-1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.SubList(0, -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.SubList(0, list.Count + 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.SubList(list.Count + 1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => list.SubList(15, 12));
+
+            list.SubList(7, 0).ShouldEqual(ImmutableLinkedList<char>.Empty);
+            list.SubList(0, list.Count).ShouldEqual(list);
+            string.Join(string.Empty, list.SubList(3, 5)).ShouldEqual("defgh");
+            list.SubList(20, 6).ShouldEqual(list.Skip(20));
+        }
+
+        [Test]
         public void TestReverse()
         {
             Assert.IsEmpty(ImmutableLinkedList<char>.Empty.Reverse());
