@@ -308,6 +308,8 @@ namespace Medallion.Collections
         }
         #endregion
 
+		// todo sublist
+
 		/// <summary>
         /// Same as <see cref="Enumerable.Reverse{TSource}(IEnumerable{TSource})"/>, but the return type is <see cref="ImmutableLinkedList{T}"/>.
         /// 

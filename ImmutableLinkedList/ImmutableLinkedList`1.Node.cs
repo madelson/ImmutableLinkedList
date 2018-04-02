@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Medallion.Collections
 {
     public partial struct ImmutableLinkedList<T>
     {
+        [DebuggerDisplay("Value = {Value}")]
         internal sealed class Node
         {
 #if !INVARIANT_CHECKS

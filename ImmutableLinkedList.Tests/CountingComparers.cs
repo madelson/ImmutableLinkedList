@@ -25,4 +25,22 @@ namespace Medallion.Collections.Tests
 
         public int GetHashCode(T value) => this._comparer.GetHashCode(value);
     }
+
+    internal class CountingComparer<T> : IComparer<T>
+    {
+        private readonly IComparer<T> _comparer;
+
+        public int CompareCount { get; private set; }
+
+        public CountingComparer(IComparer<T> comparer = null)
+        {
+            this._comparer = comparer ?? Comparer<T>.Default;
+        }
+
+        public int Compare(T a, T b)
+        {
+            ++this.CompareCount;
+            return this._comparer.Compare(a, b);
+        }
+    }
 }

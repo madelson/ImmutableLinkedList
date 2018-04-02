@@ -398,5 +398,108 @@ namespace Medallion.Collections.Tests
             emptyDebugView.Head.ShouldEqual("{list is empty}");
             emptyDebugView.Tail.ShouldEqual("{list is empty}");
         }
+
+        [Test]
+        public void TestSort()
+        {
+            Assert.IsEmpty(ImmutableLinkedList<string>.Empty.Sort());
+            var singleton = ImmutableLinkedList.Create("a");
+            singleton.Sort().ShouldEqual(singleton);
+
+            var shortList = new[] { 3, 1, 4, 2, 5 }.ToImmutableLinkedList();
+            var sortedShortList = shortList.Sort();
+            sortedShortList.SequenceEqual(shortList.OrderBy(x => x)).ShouldEqual(true);
+            sortedShortList.Skip(4).ShouldEqual(shortList.Skip(4));
+
+            var longAlreadySorted = Enumerable.Range(0, 100).ToImmutableLinkedList();
+            longAlreadySorted.Sort().ShouldEqual(longAlreadySorted);
+
+            var tailAlreadySorted = Enumerable.Range(0, 100).Reverse()
+                .Concat(Enumerable.Range(200, 1000))
+                .ToImmutableLinkedList();
+            tailAlreadySorted.Sort().SequenceEqual(tailAlreadySorted.OrderBy(i => i)).ShouldEqual(true);
+            tailAlreadySorted.Sort().Skip(100).ShouldEqual(tailAlreadySorted.Skip(100));
+        }
+
+        [Test]
+        public void TestSortWithCustomComparer()
+        {
+            CollectionAssert.AreEqual(
+                actual: new[] { "xx", "a", "yy", "X", "AA", "Y", "x" }.ToImmutableLinkedList().Sort(StringComparer.OrdinalIgnoreCase),
+                expected: new[] { "a", "AA", "X", "x", "xx", "Y", "yy" }
+            );
+
+            // stability
+            var lastDigitComparer = Comparer<int>.Create((a, b) => (a % 10).CompareTo(b % 10));
+            var sortedByLastDigit = new[] { 1, 20, 23, 3, 33, 11, 21, 31, 41, 0, 4 }.ToImmutableLinkedList().Sort(lastDigitComparer);
+            CollectionAssert.AreEqual(actual: sortedByLastDigit, expected:  new[] { 20, 0, 1, 11, 21, 31, 41, 23, 3, 33, 4 });
+        }
+
+        [Test]
+        public void TestSortPerformance()
+        {
+            const int Count = 10000;
+
+            var comparer = new CountingComparer<int>();
+            var alreadySorted = Enumerable.Range(0, Count).ToImmutableLinkedList();
+            alreadySorted.Sort(comparer).ShouldEqual(alreadySorted);
+            comparer.CompareCount.ShouldEqual(Count - 1, "already sorted");
+
+            comparer = new CountingComparer<int>();
+            var reverseSorted = alreadySorted.Reverse();
+            alreadySorted.Sort(comparer).SequenceEqual(alreadySorted).ShouldEqual(true);
+            comparer.CompareCount.ShouldEqual(Count - 1, "reverse sorted");
+
+            comparer = new CountingComparer<int>();
+            var allEqual = Enumerable.Repeat(10, Count).ToImmutableLinkedList();
+            allEqual.Sort(comparer).ShouldEqual(allEqual);
+            comparer.CompareCount.ShouldEqual(Count - 1, "all equal");
+
+            comparer = new CountingComparer<int>();
+            var oneElementOutOfPlace = Enumerable.Range(1, Count - 1).Append(0).ToImmutableLinkedList();
+            oneElementOutOfPlace.Sort(comparer).SequenceEqual(alreadySorted).ShouldEqual(true);
+            Assert.Less(comparer.CompareCount, 3 * Count, "one out of place");
+
+            comparer = new CountingComparer<int>();
+            var randomlyOrdered = Enumerable.Range(0, Count).OrderBy(i => new Random(i).Next()).ToImmutableLinkedList();
+            randomlyOrdered.Sort(comparer).SequenceEqual(alreadySorted).ShouldEqual(true);
+            Assert.LessOrEqual(comparer.CompareCount, (int)Math.Ceiling(Count * Math.Log(Count, 2)), "random");
+        }
+
+        [Test]
+        public void FuzzTestSort()
+        {
+            var random = new Random(12345);
+
+            for (var i = 0; i < 1000; ++i)
+            {
+                var max = random.Next(1000);
+                var values = Enumerable.Range(0, random.Next(0, 1000))
+                    .Select(_ => random.Next(max))
+                    .ToArray();
+                values.ToImmutableLinkedList().Sort()
+                    .SequenceEqual(values.OrderBy(x => x))
+                    .ShouldEqual(true);
+            }
+        }
+
+        [Test]
+        public void FuzzTestSortPreservesSortedTails()
+        {
+            var random = new Random(54321);
+
+            for (var i = 0; i < 1000; ++i)
+            {
+                var count = random.Next(2, 2000);
+                var tailCount = random.Next(1, count);
+                var values = Enumerable.Range(0, count - tailCount)
+                    .Select(_ => random.Next(count))
+                    .Concat(Enumerable.Range(count, tailCount))
+                    .ToImmutableLinkedList();
+                var sortedValues = values.Sort();
+                sortedValues.SequenceEqual(values.OrderBy(x => x)).ShouldEqual(true);
+                values.Skip(count - tailCount).ShouldEqual(sortedValues.Skip(count - tailCount));
+            }
+        }
     }
 }
