@@ -27,7 +27,7 @@ A list instance can be further built upon using the `Prepend(Range)` and `Append
 
 Lists are `IEnumerable`, so they can be iterated over. However, the most common access pattern for this datastructure is to consider the `Head` (first item) and the `Tail` (List composed of all items but the first). There are a few APIs for this:
 
-```
+```C#
 var list = ImmutableLinkedList.CreateRange(new[] { "a", "b", "c" });
 
 // C# 7 tuple destructuring
@@ -61,7 +61,7 @@ Related to this, `ImmutableLinkedList<T>` has *reference equality* semantics (vi
 
 The .NET core libraries offer two types that implement this datastructure:
 
-`Microsoft.FSharp.Collections.FSharpList<T>` implements the core functional list type for the F# language. This supports many similar operations as `ImmutableLinkedList<T>` and is the clear choice for F# projects due to it's language integration. However, this type is less compelling for C# projects as it is rather awkward to use from C# because the methods are exposed via the separate `ListModule` class rather than being implemented on `FSharpList<T>` itself. Furthermore, using this type from a C# project means taking a dependency on the entire FSharp core DLL, which may be undesirable for some. Furthermore, `FSharpList<T>` does not offer constant-time `Count` and therefore does not implement `IReadOnlyCollection<T>`.
+`Microsoft.FSharp.Collections.FSharpList<T>` implements the core functional list type for the F# language. This supports many similar operations as `ImmutableLinkedList<T>` and is the clear choice for F# projects due to it's language integration. However, this type is less compelling for C# projects as it is rather awkward to use from C# because the methods are exposed via the separate `ListModule` class rather than being implemented on `FSharpList<T>` itself. Furthermore, using this type from a C# project means taking a dependency on the entire FSharp core DLL, which may be undesirable for some. Finally, `FSharpList<T>` does not offer constant-time `Count` and therefore does not implement `IReadOnlyCollection<T>`.
 
 `System.Collections.Immutable.ImmutableStack<T>` from the `System.Collections.Immutable` package offers another implementation of the same basic datastructure (note that `System.Collections.Immutable.ImmutableList<T>` is a very different datastructure based on a binary tree which has very different performance characteristics). `ImmutableStack<T>` is a good choice if you want to use this datastructure to represent a stack. However, it is clumsy to use it as a more general collection because it only implements operations which are directly relevant to stacks. Furthermore, `ImmutableStack<T>` does not offer constant-time `Count` and therefore does not implement `IReadOnlyCollection<T>`.
 
