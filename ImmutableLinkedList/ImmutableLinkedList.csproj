@@ -17,7 +17,7 @@
 
     <PackageId>ImmutableLinkedList</PackageId>
     <Description>Lightweight and performant immutable linked list data structure for .NET</Description>
-    <PackageLicenseUrl>https://github.com/madelson/ImmutableLinkedList/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>immutable linked list functional head tail</PackageTags>
     <PackageProjectUrl>https://github.com/madelson/ImmutableLinkedList</PackageProjectUrl>
     <PackageReleaseNotes>See https://github.com/madelson/ImmutableLinkedList#release-notes</PackageReleaseNotes>
