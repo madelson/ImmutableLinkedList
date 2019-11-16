@@ -7,17 +7,17 @@ namespace Medallion.Collections
     /// <summary>
     /// An immutable linked list data structure
     /// </summary>
-    public partial struct ImmutableLinkedList<T> : IReadOnlyCollection<T>, IEquatable<ImmutableLinkedList<T>>
+    public readonly partial struct ImmutableLinkedList<T> : IReadOnlyCollection<T>, IEquatable<ImmutableLinkedList<T>>
     {
         /// <summary>
         /// The empty list
         /// </summary>
-        public static ImmutableLinkedList<T> Empty => default(ImmutableLinkedList<T>);
+        public static ImmutableLinkedList<T> Empty => default;
 
-        private Node _head;
-        private int _count;
+        private readonly Node? _head;
+        private readonly int _count;
 
-        private ImmutableLinkedList(Node head, int count)
+        private ImmutableLinkedList(Node? head, int count)
         {
             this._head = head;
             this._count = count;
@@ -48,7 +48,7 @@ namespace Medallion.Collections
             get
             {
                 if (this._count == 0) { ThrowEmpty(); }
-                return this._head.Value;
+                return this._head!.Value;
             }
         }
 
@@ -62,7 +62,7 @@ namespace Medallion.Collections
             get
             {
                 if (this._count == 0) { ThrowEmpty(); }
-                return new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
+                return new ImmutableLinkedList<T>(this._head!.Next, this._count - 1);
             }
         }
 
@@ -104,7 +104,7 @@ namespace Medallion.Collections
         {
             if (this._count == 0) { ThrowEmpty(); }
 
-            head = this._head.Value;
+            head = this._head!.Value;
             tail = new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
         }
 
@@ -116,13 +116,13 @@ namespace Medallion.Collections
         {
             if (this._count != 0)
             {
-                head = this._head.Value;
+                head = this._head!.Value;
                 tail = new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
                 return true;
             }
 
-            head = default(T);
-            tail = default(ImmutableLinkedList<T>);
+            head = default!;
+            tail = default;
             return false;
         }
 
@@ -133,7 +133,7 @@ namespace Medallion.Collections
 
         private static void ThrowEmpty() => throw new InvalidOperationException("the list is empty");
 
-        private static void CopyNonEmptyRange(Node head, Node last, out Node newHead, out Node newLast)
+        private static void CopyNonEmptyRange(Node head, Node? last, out Node newHead, out Node newLast)
         {
 #if INVARIANT_CHECKS
             if (head == last) { throw new InvalidOperationException("range was empty"); }
@@ -142,7 +142,7 @@ namespace Medallion.Collections
             var newCurrent = newHead = new Node(head.Value);
             for (var current = head.Next; current != last; current = current.Next)
             {
-                newCurrent = newCurrent.Next = new Node(current.Value);
+                newCurrent = newCurrent.Next = new Node(current!.Value);
             }
             newLast = newCurrent;
         }

@@ -29,7 +29,7 @@ namespace Medallion.Collections
         /// 
         /// This method is O(n).
         /// </summary>
-        public bool SequenceEqual(ImmutableLinkedList<T> that, IEqualityComparer<T> comparer = null)
+        public bool SequenceEqual(ImmutableLinkedList<T> that, IEqualityComparer<T>? comparer = null)
         {
             if (this._count != that._count) { return false; }
 
@@ -40,7 +40,7 @@ namespace Medallion.Collections
             while (true)
             {
                 if (thisCurrent == thatCurrent) { return true; }
-                if (thisCurrent == null || !comparerToUse.Equals(thisCurrent.Value, thatCurrent.Value)) { return false; }
+                if (thisCurrent == null || !comparerToUse.Equals(thisCurrent.Value, thatCurrent!.Value)) { return false; }
 
                 thisCurrent = thisCurrent.Next;
                 thatCurrent = thatCurrent.Next;
@@ -99,7 +99,7 @@ namespace Medallion.Collections
             if (list._count == 0) { return this; }
             if (this._count == 0) { return list; }
 
-            CopyNonEmptyRange(list._head, null, out var newHead, out var newLast);
+            CopyNonEmptyRange(list._head!, null, out var newHead, out var newLast);
             newLast.Next = this._head;
             return new ImmutableLinkedList<T>(newHead, this._count + list._count);
         }
@@ -115,7 +115,7 @@ namespace Medallion.Collections
         {
             if (this._count == 0) { return Create(value); }
 
-            CopyNonEmptyRange(this._head, null, out var newHead, out var newLast);
+            CopyNonEmptyRange(this._head!, null, out var newHead, out var newLast);
             newLast.Next = new Node(value);
             return new ImmutableLinkedList<T>(newHead, this._count + 1);
         }
@@ -154,7 +154,7 @@ namespace Medallion.Collections
                         return new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
                     }
 
-                    CopyNonEmptyRange(this._head, current, out var newHead, out var newLast);
+                    CopyNonEmptyRange(this._head!, current, out var newHead, out var newLast);
                     newLast.Next = current.Next;
                     return new ImmutableLinkedList<T>(newHead, this._count - 1);
                 }
@@ -181,15 +181,15 @@ namespace Medallion.Collections
             // remove at 0 requires no copying
             if (index == 0)
             {
-                removed = this._head.Value;
+                removed = this._head!.Value;
                 return new ImmutableLinkedList<T>(this._head.Next, this._count - 1);
             }
 
-            var current = this._head.Next;
-            for (var i = 1; i < index; ++i) { current = current.Next; }
+            var current = this._head!.Next;
+            for (var i = 1; i < index; ++i) { current = current!.Next; }
 
             CopyNonEmptyRange(this._head, current, out var newHead, out var newLast);
-            newLast.Next = current.Next;
+            newLast.Next = current!.Next;
             removed = current.Value;
             return new ImmutableLinkedList<T>(newHead, this._count - 1);
         }
@@ -206,7 +206,7 @@ namespace Medallion.Collections
             if (withoutPrefix._count == 0) { return Empty; }
 
             // now, remove any elements from the middle/end, copying only if necessary
-            var newHead = withoutPrefix._head;
+            var newHead = withoutPrefix._head!;
             var lastNonRemoved = newHead;
             var countRemoved = 0;
             var current = newHead.Next;
@@ -331,8 +331,8 @@ namespace Medallion.Collections
             var skipped = this.Skip(startIndex);
             if (count == skipped.Count) { return skipped; }
 
-            var current = skipped._head.Next;
-            for (var i = 1; i < count; ++i) { current = current.Next; }
+            var current = skipped._head!.Next;
+            for (var i = 1; i < count; ++i) { current = current!.Next; }
             CopyNonEmptyRange(skipped._head, current, out var subListHead, out _);
             return new ImmutableLinkedList<T>(subListHead, count);
         }
@@ -346,7 +346,7 @@ namespace Medallion.Collections
         {
             if (this._count < 2) { return this; }
 
-            var current = new Node(this._head.Value);
+            var current = new Node(this._head!.Value);
             for (var next = this._head.Next; next != null; next = next.Next)
             {
                 current = new Node(next.Value) { Next = current };

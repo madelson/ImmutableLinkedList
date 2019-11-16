@@ -11,12 +11,12 @@ namespace Medallion.Collections
         internal sealed class Node
         {
 #if !INVARIANT_CHECKS
-            internal Node Next;
+            internal Node? Next;
 #else
-            private Node _next;
+            private Node? _next;
             private bool _frozen;
 
-            internal Node Next
+            internal Node? Next
             {
                 get => this._next;
                 set => this._next = this._frozen ? throw new InvalidOperationException("frozen") : value;

@@ -22,7 +22,7 @@ namespace Medallion.Collections
             }
 
             public int Count => this._list.Count;
-            public object Head => this._list.Count > 0 ? (object)this._list.Head : "{list is empty}";
+            public object? Head => this._list.Count > 0 ? (object?)this._list.Head : "{list is empty}";
             public object Tail => this._list.Count > 0 ? (object)this._list.Tail : "{list is empty}";
             
             public T[] Items

@@ -71,3 +71,4 @@ In addition to the operations already mentioned, `ImmutableLinkedList<T>` offers
 
 ## Release notes
 - 1.0.0 Initial release
+- 1.0.1 Compiled as a readonly struct and with C# 8 nullable reference type annotations

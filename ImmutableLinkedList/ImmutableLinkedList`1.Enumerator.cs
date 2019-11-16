@@ -26,12 +26,12 @@ namespace Medallion.Collections
 		/// </summary>
 		public struct Enumerator : IEnumerator<T>
 		{
-			private Node _next;
+			private Node? _next;
 
-			internal Enumerator(Node first)
+			internal Enumerator(Node? first)
 			{
 				this._next = first;
-				this.Current = default(T);
+				this.Current = default!;
 			}
 
 			/// <summary>
@@ -40,7 +40,7 @@ namespace Medallion.Collections
 			/// </summary>
 			public T Current { get; private set; }
 
-			object IEnumerator.Current => this.Current;
+			object? IEnumerator.Current => this.Current;
 
 			/// <summary>
 			/// Cleans up any resources held by the enumerator (currently none)
@@ -54,7 +54,7 @@ namespace Medallion.Collections
 			{
 				if (this._next == null)
 				{
-					this.Current = default(T);
+					this.Current = default!;
 					return false;
 				}
 

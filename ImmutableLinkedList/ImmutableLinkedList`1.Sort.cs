@@ -18,11 +18,11 @@ namespace Medallion.Collections
         /// be copied. As an extension of this, calling this method on an already-sorted list 
         /// results in no copying (the original list is returned).
         /// </summary>
-        public ImmutableLinkedList<T> Sort(IComparer<T> comparer = null)
+        public ImmutableLinkedList<T> Sort(IComparer<T>? comparer = null)
         {
             if (this._count < 2) { return this; }
 
-            SortHelper(this._head, this._count, comparer ?? Comparer<T>.Default, out var sorted, out var next);
+            SortHelper(this._head!, this._count, comparer ?? Comparer<T>.Default, out var sorted, out var next);
 #if INVARIANT_CHECKS
             if (next != null) { throw new InvalidOperationException("sanity check"); }
 #endif
@@ -35,7 +35,7 @@ namespace Medallion.Collections
             int count,
             IComparer<T> comparer,
             out SortedSegment sorted,
-            out Node next)
+            out Node? next)
         {
             // base case
             if (count == 1)
@@ -50,11 +50,11 @@ namespace Medallion.Collections
             SortHelper(head, firstHalfCount, comparer, out var sortedFirstHalf, out var secondHalfHead);
 
             // sort the second half
-            SortHelper(secondHalfHead, count - firstHalfCount, comparer, out var sortedSecondHalf, out next);
+            SortHelper(secondHalfHead!, count - firstHalfCount, comparer, out var sortedSecondHalf, out next);
             
             // merge
 
-            // see if we can short-circuit. Don't bother when count is small, since then just merging is equally cheap
+            // see if we can short-circuit
             if (TryShortCircuitMerge(ref sortedFirstHalf, ref sortedSecondHalf, count, comparer, out sorted))
             {
                 return;
@@ -83,7 +83,7 @@ namespace Medallion.Collections
             {
                 if (segment1.Last.Next != segment2.First)
                 {
-                    // we only have to linke the two if they aren't already linked
+                    // we only have to link the two if they aren't already linked
                     EnsureFullyCopied(ref segment1);
                     segment1.Last.Next = segment2.First;
                 }
@@ -102,7 +102,7 @@ namespace Medallion.Collections
                 return true;
             }
 
-            merged = default(SortedSegment);
+            merged = default;
             return false;
         }
 
@@ -121,17 +121,18 @@ namespace Medallion.Collections
             // if we need to do a full merge, then no nodes in segment1 are retaining
             // their positions. Therefore segment1 must be fully copied
             EnsureFullyCopied(ref segment1);
-            var next1 = segment1.First;
-            var next2 = segment2.First;
+            Node? next1 = segment1.First;
+            Node? next2 = segment2.First;
             var isNext2Copied = segment2.LastCopied != null;
-            merged = default(SortedSegment);
+            Node? mergedFirst = null;
+            Node? mergedLast = null;
             do
             {
                 if (comparer.Compare(next1.Value, next2.Value) <= 0)
                 {
-                    merged.Last = merged.First == null
-                        ? merged.First = next1
-                        : merged.Last.Next = next1;
+                    mergedLast = mergedFirst == null
+                        ? mergedFirst = next1
+                        : mergedLast!.Next = next1;
                     next1 = next1 == segment1.Last ? null : next1.Next;
                 }
                 else
@@ -155,15 +156,16 @@ namespace Medallion.Collections
                         copiedNext2 = new Node(next2.Value);
                     }
 
-                    merged.Last = merged.First == null
-                        ? merged.First = copiedNext2
-                        : merged.Last.Next = copiedNext2;
+                    mergedLast = mergedFirst == null
+                        ? mergedFirst = copiedNext2
+                        : mergedLast!.Next = copiedNext2;
                     next2 = next2 == segment2.Last ? null : next2.Next;
                 }
             }
             while (next1 != null && next2 != null);
-            
+
             // add the remainder
+            Node? mergedLastCopied;
             if (next1 == null)
             {
                 // the remainder is the rest of segment2
@@ -172,17 +174,19 @@ namespace Medallion.Collections
                 // copied node is the last copied node from segment 2 (which we haven't reached).
                 // Otherwise, the last copied node is simply the last node added in the loop, since
                 // only copies are added there
-                merged.LastCopied = isNext2Copied ? segment2.LastCopied : merged.Last;
-                merged.Last.Next = next2;
-                merged.Last = segment2.Last;
+                mergedLastCopied = isNext2Copied ? segment2.LastCopied : mergedLast;
+                mergedLast.Next = next2;
+                mergedLast = segment2.Last;
             }
             else
             {
                 // the remainder is the rest of segment1
-                merged.Last.Next = next1;
+                mergedLast.Next = next1;
                 // In this case, the last copied node is the last node in merged since all of segment1 has been copied
-                merged.LastCopied = merged.Last = segment1.Last;
+                mergedLastCopied = mergedLast = segment1.Last;
             }
+
+            merged = new SortedSegment { First = mergedFirst, LastCopied = mergedLastCopied, Last = mergedLast };
         }
 
         private static void EnsureFullyCopied(ref SortedSegment segment)
@@ -201,7 +205,7 @@ namespace Medallion.Collections
             }
             else
             {
-                CopyNonEmptyRange(segment.LastCopied.Next, segment.Last.Next, out var firstCopied, out segment.Last);
+                CopyNonEmptyRange(segment.LastCopied.Next!, segment.Last!.Next, out var firstCopied, out segment.Last);
                 segment.LastCopied.Next = firstCopied;
             }
             segment.LastCopied = segment.Last;
@@ -209,7 +213,8 @@ namespace Medallion.Collections
 
         private struct SortedSegment
         {
-            public Node First, LastCopied, Last;
+            public Node First, Last;
+            public Node? LastCopied;
         }
     }
 }
