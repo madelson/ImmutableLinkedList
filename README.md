@@ -51,7 +51,7 @@ if (list.TryDeconstruct(out var head, out var tail))
 * The wrapping value type holds the list count, allowing `list.Count` to run in constant time but avoiding the memory overhead of storing count with every list node
 * Clean representation of the empty list
 
-`ImmutableLinkedList<T>` implements the `IReadOnlyList<T>` interface as well as the read-only parts of the `ICollection<T>` interface.
+`ImmutableLinkedList<T>` implements the `IReadOnlyCollection<T>` interface as well as the read-only parts of the `ICollection<T>` interface.
 
 As mentioned previously, because the datastructure is immutable many operations require copying the underlying list nodes in order to build a new list. For all list operations, the implementation is aggressive in avoiding such copies where they are not necessary, thus preserving maximal shared structure between the original list and the new list being constructed. As an example `Sort` will return the original list unchanged if it is already sorted.
 
