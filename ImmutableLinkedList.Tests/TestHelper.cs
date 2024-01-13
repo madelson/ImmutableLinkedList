@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Medallion.Collections.Tests
+namespace Medallion.Collections.Tests;
+
+internal static class TestHelper
 {
-    internal static class TestHelper
+    public static T ShouldEqual<T>(this T actual, T expected, string message = null)
     {
-        public static T ShouldEqual<T>(this T actual, T expected, string message = null)
-        {
-            Assert.AreEqual(actual: actual, expected: expected, message: message);
-            return actual;
-        }
+        Assert.That(actual, Is.EqualTo(expected), message: message);
+        return actual;
     }
 }

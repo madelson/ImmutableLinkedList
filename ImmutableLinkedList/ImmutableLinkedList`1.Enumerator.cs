@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
-namespace Medallion.Collections
-{
+namespace Medallion.Collections;
+
 	public partial struct ImmutableLinkedList<T> : IEnumerable<T>
 	{
 		/// <summary>
@@ -16,8 +17,8 @@ namespace Medallion.Collections
 		/// "snapshot" of the enumerator state; the original variable can continue to be enumerated over while the
 		/// snapshot remains at the original state (and can be advanced from there)
 		/// </summary>
-		public Enumerator GetEnumerator() => new Enumerator(this._head);
-		IEnumerator<T> IEnumerable<T>.GetEnumerator() => this.GetEnumerator();
+		public Enumerator GetEnumerator() => new(this._head);
+		IEnumerator<T> IEnumerable<T>.GetEnumerator() => this.Count != 0 ? this.GetEnumerator() : Enumerable.Empty<T>().GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
 		/// <summary>
@@ -40,12 +41,12 @@ namespace Medallion.Collections
 			/// </summary>
 			public T Current { get; private set; }
 
-			object? IEnumerator.Current => this.Current;
+			readonly object? IEnumerator.Current => this.Current;
 
 			/// <summary>
 			/// Cleans up any resources held by the enumerator (currently none)
 			/// </summary>
-			public void Dispose() { }
+			public readonly void Dispose() { }
 
 			/// <summary>
 			/// Advances the enumerator, returning false if the end of the list has been reached
@@ -66,4 +67,3 @@ namespace Medallion.Collections
 			void IEnumerator.Reset() => throw new NotSupportedException();
 		}
 	}
-}

@@ -3,41 +3,35 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace Medallion.Collections
+namespace Medallion.Collections;
+
+public partial struct ImmutableLinkedList<T>
 {
-    public partial struct ImmutableLinkedList<T>
+    [DebuggerDisplay("Value = {Value}")]
+    internal sealed class Node(T value)
     {
-        [DebuggerDisplay("Value = {Value}")]
-        internal sealed class Node
-        {
 #if !INVARIANT_CHECKS
-            internal Node? Next;
+        internal Node? Next;
 #else
-            private Node? _next;
-            private bool _frozen;
+        private Node? _next;
+        private bool _frozen;
 
-            internal Node? Next
+        internal Node? Next
+        {
+            get => this._next;
+            set => this._next = this._frozen ? throw new InvalidOperationException("frozen") : value;
+        }
+
+        internal void Freeze()
+        {
+            if (!this._frozen)
             {
-                get => this._next;
-                set => this._next = this._frozen ? throw new InvalidOperationException("frozen") : value;
-            }
-
-            internal void Freeze()
-            {
-                if (!this._frozen)
-                {
-                    this.Next?.Freeze();
-                    this._frozen = true;
-                }
-            }
-#endif
-
-            internal readonly T Value;
-
-            public Node(T value)
-            {
-                this.Value = value;
+                this.Next?.Freeze();
+                this._frozen = true;
             }
         }
+#endif
+
+        internal readonly T Value = value;
     }
 }

@@ -2,219 +2,218 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Medallion.Collections
-{
-    public partial struct ImmutableLinkedList<T>
-    {
-        /// <summary>
-        /// Returns a new list with the elements sorted. The sort is stable.
-        /// 
-        /// This method uses the merge sort algorithm and is O(nlg(n)). However, it 
-        /// can take advantage of existing sorted structure in the input to run as quickly
-        /// as O(n) in some cases (e. g. already-sorted input).
-        /// 
-        /// Elements are only copied as needed. For example, if a trailing portion of the 
-        /// original list remains unchanged in the sorted output, those elements will not 
-        /// be copied. As an extension of this, calling this method on an already-sorted list 
-        /// results in no copying (the original list is returned).
-        /// </summary>
-        public ImmutableLinkedList<T> Sort(IComparer<T>? comparer = null)
-        {
-            if (this._count < 2) { return this; }
+namespace Medallion.Collections;
 
-            SortHelper(this._head!, this._count, comparer ?? Comparer<T>.Default, out var sorted, out var next);
+public partial struct ImmutableLinkedList<T>
+{
+    /// <summary>
+    /// Returns a new list with the elements sorted. The sort is stable.
+    /// 
+    /// This method uses the merge sort algorithm and is O(nlg(n)). However, it 
+    /// can take advantage of existing sorted structure in the input to run as quickly
+    /// as O(n) in some cases (e. g. already-sorted input).
+    /// 
+    /// Elements are only copied as needed. For example, if a trailing portion of the 
+    /// original list remains unchanged in the sorted output, those elements will not 
+    /// be copied. As an extension of this, calling this method on an already-sorted list 
+    /// results in no copying (the original list is returned).
+    /// </summary>
+    public ImmutableLinkedList<T> Sort(IComparer<T>? comparer = null)
+    {
+        if (this._count < 2) { return this; }
+
+        SortHelper(this._head!, this._count, comparer ?? Comparer<T>.Default, out var sorted, out var next);
 #if INVARIANT_CHECKS
-            if (next != null) { throw new InvalidOperationException("sanity check"); }
+        if (next != null) { throw new InvalidOperationException("sanity check"); }
 #endif
 
-            return new ImmutableLinkedList<T>(sorted.First, this._count);
-        }
+        return new(sorted.First, this._count);
+    }
 
-        private static void SortHelper(
-            Node head,
-            int count,
-            IComparer<T> comparer,
-            out SortedSegment sorted,
-            out Node? next)
+    private static void SortHelper(
+        Node head,
+        int count,
+        IComparer<T> comparer,
+        out SortedSegment sorted,
+        out Node? next)
+    {
+        // base case
+        if (count == 1)
         {
-            // base case
-            if (count == 1)
-            {
-                sorted = new SortedSegment { First = head, LastCopied = null, Last = head };
-                next = head.Next;
-                return;
-            }
-
-            // sort the first half
-            var firstHalfCount = count >> 1;
-            SortHelper(head, firstHalfCount, comparer, out var sortedFirstHalf, out var secondHalfHead);
-
-            // sort the second half
-            SortHelper(secondHalfHead!, count - firstHalfCount, comparer, out var sortedSecondHalf, out next);
-            
-            // merge
-
-            // see if we can short-circuit
-            if (TryShortCircuitMerge(ref sortedFirstHalf, ref sortedSecondHalf, count, comparer, out sorted))
-            {
-                return;
-            }
-
-            // full-on merge
-            Merge(ref sortedFirstHalf, ref sortedSecondHalf, comparer, out sorted);
+            sorted = new SortedSegment { First = head, LastCopied = null, Last = head };
+            next = head.Next;
+            return;
         }
+
+        // sort the first half
+        var firstHalfCount = count >> 1;
+        SortHelper(head, firstHalfCount, comparer, out var sortedFirstHalf, out var secondHalfHead);
+
+        // sort the second half
+        SortHelper(secondHalfHead!, count - firstHalfCount, comparer, out var sortedSecondHalf, out next);
         
-        /// <summary>
-        /// An optimistic version of <see cref="Merge(ref SortedSegment, ref SortedSegment, IComparer{T}, out SortedSegment)"/> which
-        /// can skip most of the work in the case where one segment goes entirely before the other. This allows us to achieve O(n)
-        /// performance for mostly-sorted or mostly-reverse sorted input and generally take advantage of existing sorted subsequences
-        /// in the data.
-        /// </summary>
-        private static bool TryShortCircuitMerge(
-            // passed by ref to avoid copying
-            ref SortedSegment segment1,
-            ref SortedSegment segment2,
-            int count,
-            IComparer<T> comparer,
-            out SortedSegment merged)
+        // merge
+
+        // see if we can short-circuit
+        if (TryShortCircuitMerge(ref sortedFirstHalf, ref sortedSecondHalf, count, comparer, out sorted))
         {
-            // see if the segments are already in order
-            if (comparer.Compare(segment1.Last.Value, segment2.First.Value) <= 0)
-            {
-                if (segment1.Last.Next != segment2.First)
-                {
-                    // we only have to link the two if they aren't already linked
-                    EnsureFullyCopied(ref segment1);
-                    segment1.Last.Next = segment2.First;
-                }
-                merged = new SortedSegment { First = segment1.First, LastCopied = segment2.LastCopied, Last = segment2.Last };
-                return true;
-            }
-
-            // see if all of second goes before all of first (always true if count is 2)
-            if (count == 2 || comparer.Compare(segment2.Last.Value, segment1.First.Value) <= 0)
-            {
-                // since we're doing a swap, both segments must be fully copied
-                EnsureFullyCopied(ref segment1);
-                EnsureFullyCopied(ref segment2);
-                segment2.Last.Next = segment1.First;
-                merged = new SortedSegment { First = segment2.First, Last = segment1.Last, LastCopied = segment1.Last };
-                return true;
-            }
-
-            merged = default;
-            return false;
+            return;
         }
 
-        /// <summary>
-        /// The standard merge algorithm, adjusted to manage proper copying. Assumes that
-        /// <see cref="TryShortCircuitMerge(ref SortedSegment, ref SortedSegment, int, IComparer{T}, out SortedSegment)"/>
-        /// has already been called and returned false.
-        /// </summary>
-        private static void Merge(
-            // passed by ref to avoid copying
-            ref SortedSegment segment1,
-            ref SortedSegment segment2,
-            IComparer<T> comparer,
-            out SortedSegment merged)
+        // full-on merge
+        Merge(ref sortedFirstHalf, ref sortedSecondHalf, comparer, out sorted);
+    }
+    
+    /// <summary>
+    /// An optimistic version of <see cref="Merge(ref SortedSegment, ref SortedSegment, IComparer{T}, out SortedSegment)"/> which
+    /// can skip most of the work in the case where one segment goes entirely before the other. This allows us to achieve O(n)
+    /// performance for mostly-sorted or mostly-reverse sorted input and generally take advantage of existing sorted subsequences
+    /// in the data.
+    /// </summary>
+    private static bool TryShortCircuitMerge(
+        // passed by ref to avoid copying
+        ref SortedSegment segment1,
+        ref SortedSegment segment2,
+        int count,
+        IComparer<T> comparer,
+        out SortedSegment merged)
+    {
+        // see if the segments are already in order
+        if (comparer.Compare(segment1.Last.Value, segment2.First.Value) <= 0)
         {
-            // if we need to do a full merge, then no nodes in segment1 are retaining
-            // their positions. Therefore segment1 must be fully copied
-            EnsureFullyCopied(ref segment1);
-            Node? next1 = segment1.First;
-            Node? next2 = segment2.First;
-            var isNext2Copied = segment2.LastCopied != null;
-            Node? mergedFirst = null;
-            Node? mergedLast = null;
-            do
+            if (segment1.Last.Next != segment2.First)
             {
-                if (comparer.Compare(next1.Value, next2.Value) <= 0)
+                // we only have to link the two if they aren't already linked
+                EnsureFullyCopied(ref segment1);
+                segment1.Last.Next = segment2.First;
+            }
+            merged = new SortedSegment { First = segment1.First, LastCopied = segment2.LastCopied, Last = segment2.Last };
+            return true;
+        }
+
+        // see if all of second goes before all of first (always true if count is 2)
+        if (count == 2 || comparer.Compare(segment2.Last.Value, segment1.First.Value) <= 0)
+        {
+            // since we're doing a swap, both segments must be fully copied
+            EnsureFullyCopied(ref segment1);
+            EnsureFullyCopied(ref segment2);
+            segment2.Last.Next = segment1.First;
+            merged = new SortedSegment { First = segment2.First, Last = segment1.Last, LastCopied = segment1.Last };
+            return true;
+        }
+
+        merged = default;
+        return false;
+    }
+
+    /// <summary>
+    /// The standard merge algorithm, adjusted to manage proper copying. Assumes that
+    /// <see cref="TryShortCircuitMerge(ref SortedSegment, ref SortedSegment, int, IComparer{T}, out SortedSegment)"/>
+    /// has already been called and returned false.
+    /// </summary>
+    private static void Merge(
+        // passed by ref to avoid copying
+        ref SortedSegment segment1,
+        ref SortedSegment segment2,
+        IComparer<T> comparer,
+        out SortedSegment merged)
+    {
+        // if we need to do a full merge, then no nodes in segment1 are retaining
+        // their positions. Therefore segment1 must be fully copied
+        EnsureFullyCopied(ref segment1);
+        var next1 = segment1.First;
+        var next2 = segment2.First;
+        var isNext2Copied = segment2.LastCopied != null;
+        Node? mergedFirst = null;
+        Node? mergedLast = null;
+        do
+        {
+            if (comparer.Compare(next1.Value, next2.Value) <= 0)
+            {
+                mergedLast = mergedFirst == null
+                    ? mergedFirst = next1
+                    : mergedLast!.Next = next1;
+                next1 = next1 == segment1.Last ? null : next1.Next;
+            }
+            else
+            {
+                // this loop runs so long as there are nodes remaining in both 1 and 2.
+                // In that case, any node added as part of this loop will be followed by
+                // at least one node from the other segment. Therefore, only copies may
+                // be added
+
+                Node copiedNext2;
+                if (isNext2Copied)
                 {
-                    mergedLast = mergedFirst == null
-                        ? mergedFirst = next1
-                        : mergedLast!.Next = next1;
-                    next1 = next1 == segment1.Last ? null : next1.Next;
+                    copiedNext2 = next2;
+                    if (next2 == segment2.LastCopied)
+                    {
+                        isNext2Copied = false;
+                    }
                 }
                 else
                 {
-                    // this loop runs so long as there are nodes remaining in both 1 and 2.
-                    // In that case, any node added as part of this loop will be followed by
-                    // at least one node from the other segment. Therefore, only copies may
-                    // be added
-
-                    Node copiedNext2;
-                    if (isNext2Copied)
-                    {
-                        copiedNext2 = next2;
-                        if (next2 == segment2.LastCopied)
-                        {
-                            isNext2Copied = false;
-                        }
-                    }
-                    else
-                    {
-                        copiedNext2 = new Node(next2.Value);
-                    }
-
-                    mergedLast = mergedFirst == null
-                        ? mergedFirst = copiedNext2
-                        : mergedLast!.Next = copiedNext2;
-                    next2 = next2 == segment2.Last ? null : next2.Next;
+                    copiedNext2 = new Node(next2.Value);
                 }
-            }
-            while (next1 != null && next2 != null);
 
-            // add the remainder
-            Node? mergedLastCopied;
-            if (next1 == null)
-            {
-                // the remainder is the rest of segment2
-
-                // if we are still in the copied region of segment2, then the last
-                // copied node is the last copied node from segment 2 (which we haven't reached).
-                // Otherwise, the last copied node is simply the last node added in the loop, since
-                // only copies are added there
-                mergedLastCopied = isNext2Copied ? segment2.LastCopied : mergedLast;
-                mergedLast.Next = next2;
-                mergedLast = segment2.Last;
+                mergedLast = mergedFirst == null
+                    ? mergedFirst = copiedNext2
+                    : mergedLast!.Next = copiedNext2;
+                next2 = next2 == segment2.Last ? null : next2.Next;
             }
-            else
-            {
-                // the remainder is the rest of segment1
-                mergedLast.Next = next1;
-                // In this case, the last copied node is the last node in merged since all of segment1 has been copied
-                mergedLastCopied = mergedLast = segment1.Last;
-            }
-
-            merged = new SortedSegment { First = mergedFirst, LastCopied = mergedLastCopied, Last = mergedLast };
         }
+        while (next1 != null && next2 != null);
 
-        private static void EnsureFullyCopied(ref SortedSegment segment)
+        // add the remainder
+        Node? mergedLastCopied;
+        if (next1 == null)
         {
-            if (segment.LastCopied != segment.Last)
-            {
-                FullyCopy(ref segment);
-            }
+            // the remainder is the rest of segment2
+
+            // if we are still in the copied region of segment2, then the last
+            // copied node is the last copied node from segment 2 (which we haven't reached).
+            // Otherwise, the last copied node is simply the last node added in the loop, since
+            // only copies are added there
+            mergedLastCopied = isNext2Copied ? segment2.LastCopied : mergedLast;
+            mergedLast.Next = next2;
+            mergedLast = segment2.Last;
+        }
+        else
+        {
+            // the remainder is the rest of segment1
+            mergedLast.Next = next1;
+            // In this case, the last copied node is the last node in merged since all of segment1 has been copied
+            mergedLastCopied = mergedLast = segment1.Last;
         }
 
-        private static void FullyCopy(ref SortedSegment segment)
-        {
-            if (segment.LastCopied == null)
-            {
-                CopyNonEmptyRange(segment.First, segment.Last.Next, out segment.First, out segment.Last);
-            }
-            else
-            {
-                CopyNonEmptyRange(segment.LastCopied.Next!, segment.Last!.Next, out var firstCopied, out segment.Last);
-                segment.LastCopied.Next = firstCopied;
-            }
-            segment.LastCopied = segment.Last;
-        }
+        merged = new SortedSegment { First = mergedFirst, LastCopied = mergedLastCopied, Last = mergedLast };
+    }
 
-        private struct SortedSegment
+    private static void EnsureFullyCopied(ref SortedSegment segment)
+    {
+        if (segment.LastCopied != segment.Last)
         {
-            public Node First, Last;
-            public Node? LastCopied;
+            FullyCopy(ref segment);
         }
+    }
+
+    private static void FullyCopy(ref SortedSegment segment)
+    {
+        if (segment.LastCopied == null)
+        {
+            CopyNonEmptyRange(segment.First, segment.Last.Next, out segment.First, out segment.Last);
+        }
+        else
+        {
+            CopyNonEmptyRange(segment.LastCopied.Next!, segment.Last!.Next, out var firstCopied, out segment.Last);
+            segment.LastCopied.Next = firstCopied;
+        }
+        segment.LastCopied = segment.Last;
+    }
+
+    private struct SortedSegment
+    {
+        public Node First, Last;
+        public Node? LastCopied;
     }
 }

@@ -15,6 +15,12 @@ The package exposes two public types: `ImmutableLinkedList<T>` and the non-gener
 Lists can be created by starting from the empty list or by using various factory methods on `ImmutableLinkedList`:
 
 ```C#
+// With C# >= 12
+ImmutableLinkedList<string> emptyList = [];
+ImmutableLinkedList<string> nonEmptyList = ["a", "b", "c"];
+ImmutableLinkedList<string> listFromEnumerable = [..someEnumerable, "d"];
+
+// Older (and current) versions
 var emptyList = ImmutableLinkedList<string>.Empty;
 var singletonList = ImmutableLinkedList.Create("a");
 var listFromEnumerable1 = ImmutableLinkedList.CreateRange(new[] { "a", "b", "c" });
@@ -70,5 +76,6 @@ The .NET core libraries offer two types that implement this datastructure:
 In addition to the operations already mentioned, `ImmutableLinkedList<T>` offers the following: `Contains`, `Remove(value)`, `RemoveAt(index)`, `RemoveAll(predicate)`, `Skip(count)`, `SkipWhile(predicate)`, `SubList(startIndex, count)`, `Reverse`, and `Sort`.
 
 ## Release notes
-- 1.0.0 Initial release
+- 1.1.0 Added support for C# 12 [collection expressions](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#collection-expressions)
 - 1.0.1 Compiled as a readonly struct and with C# 8 nullable reference type annotations
+- 1.0.0 Initial release
