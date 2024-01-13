@@ -7,6 +7,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
+    <!-- https://devblogs.microsoft.com/dotnet/creating-aot-compatible-libraries/ -->
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
 
     <Version>1.1.0</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -40,6 +42,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.5" Condition="'$(TargetFramework)' == 'netstandard1.1' OR '$(TargetFramework)' == 'net45'"/>
+    <PackageReference Include="System.Memory" Version="4.5.5" Condition="'$(TargetFramework)' == 'netstandard1.1' OR '$(TargetFramework)' == 'net45'" />
   </ItemGroup>
 </Project>
