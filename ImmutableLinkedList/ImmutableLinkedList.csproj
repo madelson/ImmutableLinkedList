@@ -23,6 +23,7 @@
     <PackageTags>immutable linked list functional head tail</PackageTags>
     <PackageProjectUrl>https://github.com/madelson/ImmutableLinkedList</PackageProjectUrl>
     <PackageReleaseNotes>See https://github.com/madelson/ImmutableLinkedList#release-notes</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -42,6 +43,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
     <PackageReference Include="System.Memory" Version="4.5.5" Condition="'$(TargetFramework)' == 'netstandard1.1' OR '$(TargetFramework)' == 'net45'" />
   </ItemGroup>
 </Project>
